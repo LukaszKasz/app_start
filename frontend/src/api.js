@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:18001';
 
-// Create axios instance with default config
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -10,7 +9,6 @@ const api = axios.create({
     },
 });
 
-// Add token to requests if available
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -19,20 +17,22 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// API functions
 export const authAPI = {
-    register: async (username, email, password) => {
-        const response = await api.post('/register', { username, email, password });
+    login: async (username, password) => {
+        const response = await api.post('/login', { username, password });
         return response.data;
     },
 
-    login: async (username, password) => {
-        const response = await api.post('/login', { username, password });
+    validateInviteLink: async (token) => {
+        const response = await api.post('/invite-link/validate', { token });
+        return response.data;
+    },
+
+    setPassword: async (token, password) => {
+        const response = await api.post('/set-password', { token, password });
         return response.data;
     },
 
@@ -40,25 +40,39 @@ export const authAPI = {
         const response = await api.get('/me');
         return response.data;
     },
+
+    listUsers: async () => {
+        const response = await api.get('/users');
+        return response.data;
+    },
+
+    createUser: async ({ email, firstName, lastName }) => {
+        const response = await api.post('/users', {
+            email,
+            first_name: firstName,
+            last_name: lastName,
+        });
+        return response.data;
+    },
+
+    regenerateLoginLink: async (userId) => {
+        const response = await api.post(`/users/${userId}/login-link`);
+        return response.data;
+    },
 };
 
-// Token management
 export const tokenManager = {
     setToken: (token) => {
         localStorage.setItem('token', token);
     },
 
-    getToken: () => {
-        return localStorage.getItem('token');
-    },
+    getToken: () => localStorage.getItem('token'),
 
     removeToken: () => {
         localStorage.removeItem('token');
     },
 
-    isAuthenticated: () => {
-        return !!localStorage.getItem('token');
-    },
+    isAuthenticated: () => !!localStorage.getItem('token'),
 };
 
 export default api;
